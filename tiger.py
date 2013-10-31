@@ -64,14 +64,18 @@ class tiger_envir(envir.static_envir):
 			else:
 				return [state, 1-self.true_model]
 
-	def update_belief(self,o_i):
-		if o_i==self.obs[0]:
-			temp=self.belief[0]*0.85+self.belief[1]*0.15
-			self.belief=[self.belief[0]*0.85/temp,self.belief[1]*0.15/temp]
-		else:
-			temp=self.belief[0]*0.15+self.belief[1]*0.85
-			self.belief=[self.belief[0]*0.15/temp,self.belief[1]*0.85/temp]
+	def update_belief(self, bel, o_i):
+		
+		bel2 = []
 
+		if o_i==self.obs[0]:
+			temp=bel[0]*0.85+bel[1]*0.15
+			bel2 =[bel[0]*0.85/temp,bel[1]*0.15/temp]
+		else:
+			temp=bel[0]*0.15+bel[1]*0.85
+			bel2=[bel[0]*0.15/temp,bel[1]*0.85/temp]
+		
+		return bel2
 
 	def get_init_pos(self):
 		return 0

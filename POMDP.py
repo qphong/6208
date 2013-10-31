@@ -21,6 +21,8 @@ from mdp import *
 # constants 
 theta = 0.01 # Theorem 1: Variance based paper -> controlling ro
 discount = 0.95 # Discount factor in MDP, use for reward bonus coefficient
+H = 10 # planning horizon
+R_MAX = 10 # maximum reward
 
 tiger = tiger_envir()
 
@@ -201,6 +203,18 @@ def compoundToSingleIdx(cS):
 		return cS[0] * len(obsr) + cS[1] + 1
 
 
+def singleToCompoundIdx(sS):
+	# INPUT: single state MDP
+	# OUTPUT: compound state (physical state, observation)
+
+	if sS == 0:
+		return [0] # starting state
+	if sS == len(mdpStates) - 1:
+		return [ (sS - 1) / len(obsr) ] # end state
+	else:
+		return [(sS - 1) / len(obsr), (sS - 1) % len(obsr)]
+
+
 def getMdpStates():
 
 	mdpSState = []
@@ -247,7 +261,7 @@ def getMdpAdj():
 
 
 # mdpTrans and mdpReward are the same
-def getMdpTrans():
+def getMdpTrans(belief):
 # mean transition over the belief
 
 	trans = []
@@ -263,7 +277,7 @@ def getMdpTrans():
 				expectTrans = 0.0
 
 				for mdlIdx in range(0, numMDPs):
-					expectTrans += mdpTrans[mdlIdx][i][j][k] * bel[mdlIdx]
+					expectTrans += mdpTrans[mdlIdx][i][j][k] * belief[mdlIdx]
 
 				trans[i][j].append(expectTrans)
 
@@ -273,7 +287,7 @@ def getMdpTrans():
 	return trans
 
 
-def getMdpRewards():
+def getMdpRewards(belief):
 # mean rewards over the belief
 
 	rewards = []
@@ -285,7 +299,7 @@ def getMdpRewards():
 			expectRe = 0.0
 
 			for mdlIdx in range(0, numMDPs):
-				expectRe += mdpReward[mdlIdx][i][j] * bel[mdlIdx]
+				expectRe += mdpReward[mdlIdx][i][j] * belief[mdlIdx]
 
 			rewards[i].append(expectRe)
 
@@ -316,13 +330,100 @@ def getRB_RE_list(rbCoeff = 1.0, reCoeff = 1.0):
 	return [rBonus, rRegret]
 
 
+# MDP setup
+mStates = getMdpStates()
+mActs = getMdpActs()
+mAdj = getMdpAdj()
+
+def RB_beb(s,a, mTrans, mRewards):
+
+	shouldUpdateBel = False
+	for i in mAdj[s][a]:
+		
+		nextS = singleToCompoundIdx( i )
+		
+		if len(nextS) > 1: # has observation
+			shouldUpdateBel = True
+			break
+
+	if not shouldUpdateBel:
+		return 0.0
+
+
+	# expected maximum changes to the reward function
+	mRe = 0.0
+	for nextSId in range(0, len(mAdj[s][a]) ):
+
+		maxV = 0.0
+		nextCompoundS = singleToCompoundIdx( mAdj[s][a][nextSId] )
+	
+		if len(nextCompoundS) > 1:
+
+			nextBel = tiger.update_belief(bel, nextCompoundS[1])
+			nextMeanRe = getMdpRewards(nextBel)
+
+			for s2 in mStates:
+				for a1 in mActs:
+					maxV = max(maxV, nextMeanRe[s2][a1] - mRewards[s2][a1])
+
+			mRe += maxV * mTrans[s][a][nextSId]
+
+
+	# expected maximum changes to the transition furnctions
+	mTr = 0.0
+	for nextSId in range(0, len(mAdj[s][a]) ):
+
+		maxV = 0.0
+		nextCompoundS = singleToCompoundIdx( mAdj[s][a][nextSId] )
+
+		if len(nextCompoundS) > 1:
+
+			nextBel = tiger.update_belief(bel, nextCompoundS[1])
+			nextMeanTr = getMdpTrans(nextBel)
+
+			for s2 in mStates:
+				for a1 in mActs:
+
+					sumTr = 0.0
+					for i in range( 0, len(mAdj[s2][a1]) ) :
+						sumTr += abs( nextMeanTr[s2][a1][i] - mTrans[s2][a1][i] )
+			
+					maxV = max(maxV, sumTr)
+
+			mTr += maxV * mTrans[s][a][nextSId]
+
+	return H * mRe + R_MAX * H**2 * mTr
+
+
+def getRB_BEB_list(mTrans, mRewards):
+
+	rbList = []
+
+	for s in mStates:
+
+		rbList.append([])
+		for a in mActs:
+			rbList[s].append( RB_beb(s, a, mTrans, mRewards) )
+
+	return rbList
 
 # def mdp_solver(states, action, trans_s1, trans_p, reward, rb, re, discount_fac):
 while(pos[0] != endState):
 
-	[rb, re] = getRB_RE_list(1.0, 100.0)
-	result = mdp_solver(getMdpStates(), getMdpActs(), getMdpAdj(), getMdpTrans(), \
-		getMdpRewards(), rb, re, discount)
+	# Variance - based
+	# [rb, re] = getRB_RE_list(1.0, 100.0)
+	# result = mdp_solver(mStates, mActs, mAdj, getMdpTrans(bel), \
+	# 	getMdpRewards(bel), rb, re, discount)
+	
+	# BEB
+	mTrans = getMdpTrans(bel)
+	mRewards = getMdpRewards(bel)
+
+	rb = getRB_BEB_list(mTrans, mRewards)
+	zero_RE = [ [0.0] * len(mActs) ] * len(mStates)
+	result = mdp_solver(mStates, mActs, mAdj, mTrans, \
+		mRewards, rb, zero_RE, discount)
+	
 
 	policy = result[0]
 	print policy
@@ -332,8 +433,8 @@ while(pos[0] != endState):
 	if pos[0] == endState: # Game over!
 		break
 
-	tiger.update_belief(pos[1])
-	bel = getBelief()
+	bel = tiger.update_belief(bel, pos[1])
 	print 'pos', pos
 	print bel
 	
+
