@@ -15,6 +15,11 @@ class MDP:
 	adj = {} # adjacency list
 	bel = [] # belief
 
+	H=30  #planning horizon
+	R_max=10
+
+	observation=['g','b']
+
 
 	def sensorAcc(self, d):
 		return 0.5 + 0.5 * 2.0 ** (-d / d0)
@@ -148,4 +153,57 @@ class MDP:
 
 				else:
 					self.rewards[s][a] = 0.0
+
+
+	def belUpdate(self,curBel,accuracy,obs):
+		nextBel=[]
+		if obs==self.observation[0]:
+			temp1=accuracy*curBel
+			temp2=(1-accuracy)*(1-curBel)
+			nextBel=temp1/(temp1+temp2)
+		else:
+			temp1=(1-accuracy)*curBel
+			temp2=accuracy*(1-curBel)
+			nextBel=temp1/(temp1+temp2)
+		return nextBel
+
+	def calRB(self):
+		self.RB={}
+
+		for s in self.states:
+			self.RB[s]={}
+
+			curCoord = self.getCoord(s)
+
+			for a in self.adj[s].keys():
+				if a[:-1] == 'check':
+					rockId = int(a[-1])
+					d = sqrt( (curCoord[0] - self.rocks[rockId][0]) * (curCoord[0] - self.rocks[rockId][0])\
+							+ (curCoord[1] - self.rocks[rockId][1]) * (curCoord[1] - self.rocks[rockId][1]) )
+					accuracy = self.sensorAcc(d)
+
+					rb = 0.0
+
+					for sNext in self.adj[s][a]:
+
+						updatedBel = self.belUpdate(self.bel[rockId], accuracy, sNext[-1])
+						updatedRw = updatedBel * 10 - (1 - updatedBel) * 10
+						curRw=self.bel[rockId]*10-(1-self.bel[rockId])*10
+						rb += self.H*self.trans[s][a][sNext]*(updatedRw-curRw)
+
+						rockCoord = self.rocks[rockId]
+						tmpS = 's'+str(rockCoord[0]) + str(rockCoord[1])
+						rockObsr = 'o'+str(rockId)
+						temp_RB_T=abs(updatedBel-self.trans[tmpS][a][tmpS+ ',' + rockObsr + 'g'])+\
+							abs(1 - updatedBel - self.trans[tmpS][a][tmpS + ',' + rockObsr + 'b'])
+
+						rb += self.R_max*self.H**2*self.trans[s][a][sNext]*temp_RB_T
+
+					self.RB[s][a]=rb
+
+				else:
+					self.RB[s][a]=0.0
+
+
+
 
