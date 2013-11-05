@@ -217,6 +217,8 @@ class MDP:
 		print action
 		ranNum=random()
 
+		self.H=self.H-1
+
 		nextS = self.cur_state
 		curCoord = self.getCoord(self.cur_state)
 

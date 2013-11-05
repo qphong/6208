@@ -10,7 +10,9 @@ def main():
 
 	rs_Mmdp=MDP()
 
-	for i in range(rs_Mmdp.H):
+	init_horizon=rs_Mmdp.H
+
+	for i in range(init_horizon):
 		if flag==1:
 			rs_Mmdp.calTrans()
 			rs_Mmdp.calRewards()
