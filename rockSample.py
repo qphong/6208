@@ -1,8 +1,9 @@
 
 from math import *
+from random import *
 
 
-d0 = 20
+d0 = 5
 GridSize = [7,7] # numRow, numColumn
 NumRock = 8
 
@@ -15,8 +16,9 @@ class MDP:
 	adj = {} # adjacency list
 	bel = [] # belief
 
-	H=30  #planning horizon
+	H=60  #planning horizon
 	R_max=10
+	cur_state='s30'
 
 	observation=['g','b']
 
@@ -50,7 +52,8 @@ class MDP:
 
 	def __init__(self):
 
-		self.rocks = [(0,0), (0,1), (0,2), (0,3), (0,4), (0,5), (0,6), (1,0)]
+		self.rocks = [(0,1), (1,5), (2,2), (2,3), (3,6), (5,0), (5,3), (6,2)]
+		self.true_rocks=['g','b','g','b','b','g','g','b']
 
 		self.states = [] 
 		for i in range(0,GridSize[0]): # row index
@@ -64,7 +67,7 @@ class MDP:
 		self.states.append('s07')
 
 
-		self.actions = ['n', 's', 'e', 'w', 'sample']
+		self.actions = ['e', 's', 'n', 'w', 'sample']
 		for i in range(0,NumRock):
 			self.actions.append('check' + str(i))
 
@@ -160,11 +163,15 @@ class MDP:
 		if obs==self.observation[0]:
 			temp1=accuracy*curBel
 			temp2=(1-accuracy)*(1-curBel)
-			nextBel=temp1/(temp1+temp2)
 		else:
 			temp1=(1-accuracy)*curBel
 			temp2=accuracy*(1-curBel)
+
+		if temp1 + temp2 == 0:
+			nextBel = curBel
+		else:
 			nextBel=temp1/(temp1+temp2)
+
 		return nextBel
 
 	def calRB(self):
@@ -203,6 +210,92 @@ class MDP:
 
 				else:
 					self.RB[s][a]=0.0
+
+
+	def execution(self,policy):
+		action=policy[self.cur_state]
+		print action
+		ranNum=random()
+
+		nextS = self.cur_state
+		curCoord = self.getCoord(self.cur_state)
+
+		if len(self.adj[self.cur_state][action]) > 0:
+		
+			nextS = self.adj[self.cur_state][action][0]
+
+			if action[:-1] == 'check':
+
+				rockId=int(action[-1])
+				d = sqrt( (curCoord[0] - self.rocks[rockId][0]) * (curCoord[0] - self.rocks[rockId][0])\
+								+ (curCoord[1] - self.rocks[rockId][1]) * (curCoord[1] - self.rocks[rockId][1]) )
+				accuracy = self.sensorAcc(d)
+
+				obsr = nextS.split(',')[1][-1]
+				trueV = self.true_rocks[rockId]
+
+				if obsr == trueV:
+					probObsr = accuracy
+				else:
+					probObsr = 1 - accuracy
+
+				if ranNum > probObsr:
+					nextS = self.adj[self.cur_state][action][1]
+
+				self.bel[rockId]=self.belUpdate(self.bel[rockId],accuracy,nextS[-1])
+
+				self.cur_state=nextS
+				return 1
+
+			elif action == 'sample':
+				
+				rockId=0
+				
+				for i in range(len(self.rocks)):
+					if curCoord == self.rocks[i]:
+						rockId=i
+						break
+				self.bel[rockId]=0
+
+				self.cur_state=nextS
+				return 1
+			else: # move
+				self.cur_state = nextS
+				print 'curstate:', self.cur_state
+				return 0
+
+		return 0
+
+		#self.cur_state=nextS
+
+
+		# if action[:-1]=='check':
+			
+		# 	rockId=int(action[-1])
+		# 	d = sqrt( (curCoord[0] - self.rocks[rockId][0]) * (curCoord[0] - self.rocks[rockId][0])\
+		# 					+ (curCoord[1] - self.rocks[rockId][1]) * (curCoord[1] - self.rocks[rockId][1]) )
+		# 	accuracy = self.sensorAcc(d)
+		# 	self.bel[rockId]=self.belUpdate(self.bel[rockId],accuracy,nextS[-1])
+
+		# 	self.cur_state=nextS
+		# 	return 1
+		# elif action=='sample':
+		# 	rockId=0
+		# 	for i in range(len(self.rocks)):
+		# 		if curCoord == self.rocks[i]:
+		# 			rockId=i
+		# 			break
+		# 	self.bel[rockId]=0
+
+		# 	self.cur_state=nextS
+		# 	return 1
+		# else:
+		# 	self.cur_state=nextS
+		# 	return 0
+
+
+
+
 
 
 
