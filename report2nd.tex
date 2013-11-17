@@ -35,9 +35,10 @@ or on the right door with the accuracy of 0.85. The cost for hearing action
 is -1. The penalty for opening the door having the tiger is -100. The
 reward for open the door to exit is +10.
 
-The problem is modeled as 2 MDPs in Figure 1 and Figure 2.
+The problem is modeled as 2 MDPs in \autoref{fig:TPTigerLeftMdl} and 
+\autoref{fig:TPTigerRightMdl}.
 
-\begin{figure}[h!] 
+\begin{figure}[h!]
 \centering
 
 	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
@@ -61,10 +62,10 @@ The problem is modeled as 2 MDPs in Figure 1 and Figure 2.
 
 	\end{tikzpicture}
 	\caption{MDP Model for tiger on the left door}
-	\label{fig:TigerLeftMdl}
+	\label{fig:TPTigerLeftMdl}
 \end{figure}
 
-\begin{figure}[h!] 
+\begin{figure}[h!]
 \centering
 
 	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
@@ -88,7 +89,7 @@ The problem is modeled as 2 MDPs in Figure 1 and Figure 2.
 
 	\end{tikzpicture}
 	\caption{MDP Model for tiger on the right door}
-	\label{fig:TigerRightMdl}
+	\label{fig:TPTigerRightMdl}
 \end{figure}
 
 
@@ -108,13 +109,13 @@ moving out of the grid. Moving to exit areas yields reward of 10.
 
 In our experiment, there are 7 rows and 8 columns. There are 8 rocks
 locating at $\{(0,1), (1,1), (1,4), (1,6), (3,6), (4,3), (6,1), (6,5)\}$
-(Figure 3).
+(\autoref{fig:RSProb}).
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.5\textwidth]{rocksample.png}
 \caption{Rock Sample problem}
-\label{fig:RockSampleProb}
+\label{fig:RSProb}
 \end{figure}
 
 In this problem, the probability of a rock is good (or bad) is independent from one
@@ -147,9 +148,18 @@ states without observation)
 	\item Samping action: $P( S_{x,y} | (S_{x,y}, R_{i,status}), sample) = 1.0$,\\
 	$P( S_{x,y} | S_{x,y}, sample) = 1.0$
 	\item Checking action:\\
-	$P( (S_{x,y}, R_{i,good}) | (S_{x,y}, R_{j,status}, check_i) ) = \alpha = b(i)acc(S_{x,y}, i) + (1 - b(i))(1 - acc(S_{x,y}))$, where $acc(S_{x,y},i)$ is the accuracy 
-	of sensor given the rover at $(x,y)$ and checking the \textsuperscript{th} rock.\\
-	$P( (S_{x,y}, R_{i,bad}) | (S_{x,y}, R_{j,status}, check_i) ) = 1 - \alpha$
+    \begin{equation*}
+    	\begin{aligned}
+	P( (S_{x,y}, R_{i,good}) &| (S_{x,y}, R_{j,status}, check_i) ) \\
+		&= \alpha \\
+		&= b(i)acc(S_{x,y}, i) + (1 - b(i))(1 - acc(S_{x,y}))
+		\end{aligned}
+    \end{equation*}
+    where, $acc(S_{x,y},i)$ is the accuracy 
+	of sensor given the rover at $(x,y)$ and checking the i\textsuperscript{th} rock.
+	\begin{equation*}
+		P( (S_{x,y}, R_{i,bad}) | (S_{x,y}, R_{j,status}, check_i) ) = 1 - \alpha
+	\end{equation*}
 	\end{itemize}
 
 \item Reward functions: Only action sampling and moving resulting in rewards as bellows.
@@ -163,52 +173,158 @@ states without observation)
 
 \end{itemize}
 
+\paragraph{Notes:} There is an end state for the agent moving to exit area. In 
+end state, the agent can only move into end state under any action. The reward is
+zero for any action taken in end state.
 
-\paragraph{Minesweeper game:} There is a grid of cells. Each cell can contain at most 1 mine.
-There are $k$ mines whose locations are unknown to the player in the grid. The player could choose to 
-reveal a cell. If the cell revealed contains a mine, the player loses the game. If the cell 
-revealed does not contain a mine, there are 2 cases: (1) if there are $x$ mines in 8 cells 
-surrounding the revealed cell, the revealed cell shows $x$; (2) if there are no mines in 8 
-cells surrounding the revealed cell, the surrounding cells are revealed with the same rule 
-applied to player-reveal cells. The player could choose to mark a cell if he/she thinks it
-contains a mine. The player wins the game if all mine-free cells are revealed.
+\subsubsection{Experiment Setup and Results}
 
+\paragraph{Tiger problem:} The game is just one episode, which means that the game is over
+when you open the door. We run 5000 simulations for this games. The experimental parameters
+are as follows:
+\begin{itemize}
+\item Discount factor: 0.95
+\item Number of episodes: 5000
+\end{itemize}
 
-\subsubsection{Results}
+The results are in \autoref{tab:TP1Eps}
 
-\begin{table}[H]
-\caption{Rock Sample results}
+\begin{table}[H] 
 \begin{center}
-	\begin{tabular} {| l | c | c |}
-		\hline
-			& Execution time (ms) & Total reward\\ 
-		\hline
-		SARSOP & 400,000 & 21.27\\
-		HSVI-BFS (using BPVI as lower bound) & 826 & 21.46\\
-		HSVI-BFS (using blind policy as lower bound) & 954 & 17.10\\
-		AEMSI (using BPVI as lower bound) & 954 & 17.10\\
-		AEMSI (using blind policy as lower bound) & 900 & 10.30\\
-		Our algorithm & 300 & 18.15\\ 
-		\hline
+	\begin{tabular} {| c | c | c |}
+	\hline \hline
+	Tuned Dis-RB & Belief to Open door & Expected return \\
+	\hline
+	0.007 & [0.9698,0.0302] & 3.476 \\
+	\hline
+	0.01 & [0.9945,0.0055] & 3.821 \\
+	\hline
+	0.07 & [0.999,0.001] & 2.674 \\
+	\hline \hline
 	\end{tabular}
 \end{center}
+\caption{Tiger Problem for one episode}
+\label{tab:TP1Eps}
+\end{table}
+
+\paragraph{Rock sample problem:} In order to compare with other online POMDP algorithms,
+we add a discount factor to our algorithm. We set our discount factor the same as their 
+$discount_{factor}=0.95$. The experimental paramters are as follows:
+\begin{itemize}
+\item $discount_{factor}=0.95$
+\item $d_0=20$
+\item The world model is described in \autoref{fig:RSProb}.
+\end{itemize}
+
+We set $the discount-RB=0.0001$ in this experiment. We run the simulation for each starting rock
+configuration 10 times (i.e., 10 runs for each of the $2^8$ different joint rock types). The
+initial belief state is the same for all these runs (probability each rock is good is 0.5).
+
+The result is shown in the \autoref{tab:RSCompareOtherAlg}
+
+\begin{table}[H]
+\begin{center}
+	\begin{tabular} {| l | c | c |}
+		\hline \hline
+		Algorithm & Return & Computation time (ms) \\
+		\hline
+		AEMSI (using Bline policy as lower bound) & 7.35 & 900 \\
+		\hline
+		HSVI-BFS (using Blind policy as lower bound) & 20.75 & 859 \\
+		\hline
+		AEMSI (using PBVI as a lower bound) & 17.1 & 954 \\
+		\hline
+		HSVI-BFS (using PBVI as a lower bound) & 21.46 & 826 \\
+		\hline
+		Our algorithm (no pre-computed lower bound) & 18.7 & 300 \\
+		\hline \hline
+	\end{tabular}
+\end{center}
+\caption{Rock sample results compared with other online algorithms}
+\label{tab:RSCompareOtherAlg}
+\end{table}
+
+To know whether the distribution of rocks affects the final return. We set up a different
+experiment with different rocks distribution as in \autoref{fig:RSDiffEnvir}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{Diff-Envir-Rock-Sample.png}
+\caption{Different environment setup}
+\label{fig:RSDiffEnvir}
+\end{figure}
+
+The results are shown in the \autoref{tab:RSDiffEnvir}
+
+\begin{table}[H]
+\begin{center}
+	\begin{tabular} {| c | c | c |}
+		\hline \hline
+		Algorithm & Return & Computation time (ms) \\
+		\hline
+		Our algorithm (no pre-computed lower bound) & 20.3 & 300 \\
+		\hline \hline
+	\end{tabular}
+\end{center}
+\caption{Results in another environment setup}
+\label{tab:RSDiffEnvir}
 \end{table}
 
 
 \subsection{Analysis}
 
-\emph{NEED MORE DETAILED AND CONCRETE ANALYSIS OF EXPERIMENTS.}
+\paragraph{Tiger problem:} 
+In \autoref{tab:TP1Eps}, we can see that the highest expected reward is 3.821, and its
+corresponding belief to open the door is [0.9945,0.0055]. This belief is different from
+the policy computed by standard POMDP algorithm, which suggests we should open the door
+when the belief reaches [0.9698,0.0302]. The difference is caused by the reward bonus
+which is controlled by reward bonus discount factor. If the reward bonus for checking
+action is large, then the agent prefers checking over the opening action. It is not 
+until the average reward for opening action over the belief is large enough (the belief
+becomes more certain), that the agent chooses opening action.
+
+
+\paragraph{Rock sample problem:} 
+In \autoref{tab:RSCompareOtherAlg}, we can see that
+the running time of our algorithm is significantly less than other online algorithms,
+and we do not need any pre-computed lower bound or upper bound. The reason for our final
+return is smaller than HSVI is that our reward has been discounted a lot, which means the
+agent spends more steps moving around before sampling. It is explained by the reward bonus
+for checking action can overwhelm the reward for sampling action. Hence, this problem is
+controlled by the reward bonus discount factor.
+
+In \autoref{tab:RSDiffEnvir}, we see that the agent get higher reward in this environment 
+setup because the agent samples most of the good rocks on its way out. This means it does
+not need to go back sample some rocks,so the reward is discounted less.
+
+In brief, our algorithm performs well on rock sample problem. It computes the policy fast,
+which meets the requirement of online tasks. If there is a discount factor, the total 
+discounted reward it gets is slightly less than HSVI and the return depends on the rock 
+distribution.
 
 
 \section{Conclusions and future work}
 
-\paragraph{Advantages} Our algorithm gives better running time compared with
-other POMDP algorithms.
-\paragraph{Disadvantages} There are two main disadvantages of our algorithm: (1)
+In this report, we come up with a better-running-time algorithm for solving POMDP problem in which unobservable states are discrete and static. The main idea is 
+to covert the POMDP into a finite number of MDPs, and to apply reinforcement learning
+approach with reward bonus on the mean MDP of these MDPs over the belief.
+
+We prove theoretical bound for the algorithm as in \cite{kolter}, that our algorithm only
+performs suboptimally in a polynomial number of steps. We also apply our algorithm to solve
+problems of Tiger and Rock Sample. The experimental results show a better running time 
+compared with other online POMDP algorithms.
+
+\paragraph{} In brief, our algorithm has advatanges and disadvantages as bellows:
+\begin{itemize}
+\item Advantages: Our algorithm gives better running time compared with
+other online POMDP algorithms.
+\item Disadvantages: There are two main disadvantages of our algorithm: (1)
 it can only be applied to a limited domain of POMDP problem of discrete and 
 static unobservable states; (2) to obtain good policy, our algorithm requires
 to tune the value of reward bonus discount.
-\paragraph{Future work:} We can investigate how to handle the dynamic environment, and how to choose reward bonus discount so that we get better policy.
+\end{itemize}
+
+\paragraph{} In the future, it is interesting to investigate how to handle the dynamic environment, and how to choose reward bonus discount so that we get better policy.
 
 
 \begin{thebibliography}{9}
@@ -224,6 +340,10 @@ to tune the value of reward bonus discount.
 
 \bibitem{sorg}
 	Sorg, S Singh, and RL Lewis. \emph{Variance-based rewards for approximate Bayesian reinforcement learning} - In Proceedings to Uncertainty in AI, 2010.
+
+\bibitem{ross}
+	S Rosss, J Pineau, S Chaib-Draa. \emph{Online Planning Algorithm for POMDPs}. J. Artif.
+	Intelligence, 2008.
 
 \end{thebibliography}
 
