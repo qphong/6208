@@ -184,7 +184,7 @@ when you open the door. We run 5000 simulations for this games. The experimental
 are as follows:
 \begin{itemize}
 \item Discount factor: 0.95
-\item Number of episodes: 5000
+\item Simulation length: 5000
 \end{itemize}
 
 The results are in \autoref{tab:TP1Eps}
@@ -206,6 +206,38 @@ The results are in \autoref{tab:TP1Eps}
 \caption{Tiger Problem for one episode}
 \label{tab:TP1Eps}
 \end{table}
+
+For POMDP algorithm, they assume that the game can be restarted after opening action taken, 
+which means there are infinite number of episodes. Hence, we do another experiment with 
+100 episodes to compare with POMDP algorithm. After 100 episodes, the discount factor is
+negligible, so we could take 100 episodes as an approximation to infinite number of episodes.
+The experimental parameters are as bellows:
+\begin{itemize}
+\item Discount factor: 0.95
+\item Simulation length: 500
+\item Number of episodes in each game: 100
+\end{itemize}
+
+The results are in \autoref{tab:TPINFEps}
+
+\begin{table}[H] 
+\begin{center}
+	\begin{tabular} {| c | c | c |}
+	\hline \hline
+	Tuned dis-RB & Belief to Open door & Expected return \\
+	\hline
+	0.007 & [0.9698,0.0302] & 18.953 \\
+	\hline
+	0.01 & [0.9945,0.0055] & 16.303 \\
+	\hline 
+	0.07 & [0.999,0.001] & 9.097 \\
+	\hline \hline
+	\end{tabular}
+\end{center}
+\caption{Tiger Problem for infinite episode game}
+\label{tab:TPINFEps}
+\end{table}
+
 
 \paragraph{Rock sample problem:} In order to compare with other online POMDP algorithms,
 we add a discount factor to our algorithm. We set our discount factor the same as their 
@@ -247,7 +279,7 @@ The result is shown in the \autoref{tab:RSCompareOtherAlg}
 To know whether the distribution of rocks affects the final return. We set up a different
 experiment with different rocks distribution as in \autoref{fig:RSDiffEnvir}
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{Diff-Envir-Rock-Sample.png}
 \caption{Different environment setup}
@@ -274,15 +306,18 @@ The results are shown in the \autoref{tab:RSDiffEnvir}
 \subsection{Analysis}
 
 \subsubsection{Tiger problem:} 
-In \autoref{tab:TP1Eps}, we can see that the highest expected reward is 3.821, and its
+In the case of one-episode game \autoref{tab:TP1Eps}, we can see that the highest 
+expected reward is 3.821, and its
 corresponding belief to open the door is [0.9945,0.0055]. This belief is different from
 the policy computed by standard POMDP algorithm, which suggests we should open the door
-when the belief reaches [0.9698,0.0302]. The difference is caused by the reward bonus
-which is controlled by reward bonus discount factor. If the reward bonus for checking
-action is large, then the agent prefers checking over the opening action. It is not 
-until the average reward for opening action over the belief is large enough (the belief
-becomes more certain), that the agent chooses opening action.
+when the belief reaches [0.9698,0.0302]. The difference lies in the setup of POMDP algorithm 
+for tiger problem. The policy computed by POMDP algorithm is for infinite episodes (the game
+can be restarted). Hence, compared with 1-episode game, the optimal policy is to choose
+opening action sooner as the agent can receive future reward in future episodes.
 
+In the case of infinite-episode game \autoref{tab:TPINFEps}, we can see that the optimal belief
+to open the door is [0.9698,0.0302], which is exactly the same with the policy computed by POMDP
+algorithm.
 
 \subsubsection{Rock sample problem:} 
 In \autoref{tab:RSCompareOtherAlg}, we can see that
