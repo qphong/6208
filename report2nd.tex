@@ -21,8 +21,8 @@
 
 \subsubsection{Implementations}
 
-We implement the algorithm on 3 POMDP problems: tiger, rock sample problem, 
-and minesweeper game, which are discribed briefly as bellows:
+We implement the algorithm on 3 POMDP problems: tiger and rock sample problem, which 
+are discribed briefly as bellows:
 
 \paragraph{Tiger problem:} There is 2 doors (left door and right door) for 
 the agent to escape from the
@@ -38,7 +38,7 @@ reward for open the door to exit is +10.
 The problem is modeled as 2 MDPs in \autoref{fig:TPTigerLeftMdl} and 
 \autoref{fig:TPTigerRightMdl}.
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
 
 	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
@@ -65,7 +65,7 @@ The problem is modeled as 2 MDPs in \autoref{fig:TPTigerLeftMdl} and
 	\label{fig:TPTigerLeftMdl}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
 
 	\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
@@ -273,7 +273,7 @@ The results are shown in the \autoref{tab:RSDiffEnvir}
 
 \subsection{Analysis}
 
-\paragraph{Tiger problem:} 
+\subsubsection{Tiger problem:} 
 In \autoref{tab:TP1Eps}, we can see that the highest expected reward is 3.821, and its
 corresponding belief to open the door is [0.9945,0.0055]. This belief is different from
 the policy computed by standard POMDP algorithm, which suggests we should open the door
@@ -284,7 +284,7 @@ until the average reward for opening action over the belief is large enough (the
 becomes more certain), that the agent chooses opening action.
 
 
-\paragraph{Rock sample problem:} 
+\subsubsection{Rock sample problem:} 
 In \autoref{tab:RSCompareOtherAlg}, we can see that
 the running time of our algorithm is significantly less than other online algorithms,
 and we do not need any pre-computed lower bound or upper bound. The reason for our final
@@ -302,6 +302,30 @@ which meets the requirement of online tasks. If there is a discount factor, the 
 discounted reward it gets is slightly less than HSVI and the return depends on the rock 
 distribution.
 
+\subsubsection{Comparison with BEB \cite{kolter} and Variance-based approach \cite{sorg}:}
+
+The BEB approach \cite{kolter} and our algorithm are based on different problem setup: the BEB
+assumes the transition functions are modeled as Dirichlet distributions, while in our problem, the 
+belief of MDPs is modeled as discrete distribution. However, if we only consider the reward
+bonus formula, there is a crucial difference between the two approaches. In BEB approach, 
+reward bonus for every state-action pair is treated the same way (only depends on the number
+of state-action pair visits). Hence, they implicitly assume that the information they get
+is proportional to the number of state-action pair visits. However, it is more precise that
+the information we get for visiting a state-action pair depends on the change in belief
+after executing that state-action pair, which is the intuition behind our reward bonus formula.
+For example, in tiger problem, the reward bonus for both listening and opening action are in
+similar relationship with number of taking these actions (since there is only 1 state). Hence,
+the agent could take the opening action too early due to the reward bonus, which results in
+non-optimal policy. The same consequence can happen to rock sample problem with sampling action.
+
+Talking about the Variance-based approach \cite{sorg}, as the reward bonus depends on the variance of the
+transition functions and reward functions over the belief, the reward bonus is assigned a
+non-zero value as long as the belief is uncertain. For example, in the case of tiger
+problem, the reward bonus for open action will be non-zero. This could be dangerous and result
+in non-optimal policy because the reward bonus could encourage the agent to take opening action
+when the belief is highly uncertain. The same consequence can happen to rock sample problem,
+which is the reward bonus encourages the agent to take sampling action, even though the belief
+is uncertain.
 
 \section{Conclusions and future work}
 
