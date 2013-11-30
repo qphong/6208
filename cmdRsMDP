@@ -1,0 +1,3 @@
+swig -python -c++ rsMDPSolver.cpp
+g++ -fPIC -dynamiclib -lpython -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -o _rsMDPSolver.so rsMDPSolver_wrap.cxx
+
