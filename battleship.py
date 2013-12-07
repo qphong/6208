@@ -19,30 +19,32 @@ nRow = 10
 nCol = 10
 
 shipCells = []
+noShipCells = []
 
-for r in range(nRow):
-	field.append([])
-	for c in range(nCol):
-		field[r].append(UNKNOWN)
-
-
-def createField(inShipCells, noShipCells):
+def createField(inShipCells, inNoShipCells):
 
 	global field
 	global shipCells
+	global noShipCells
 
 	shipCells = inShipCells[:]
+	noShipCells = inNoShipCells[:]
+
+	for r in range(nRow):
+		field.append([])
+		for c in range(nCol):
+			field[r].append(UNKNOWN)
 
 	c = 1
-	for (x,y) in shipCells:
+	for [x,y] in shipCells:
 		field[x][y] = c
 		c = c + 1
 
-	for (x,y) in noShipCells:
+	for [x,y] in noShipCells:
 		field[x][y] = NOSHIP
 
 
-def isShipAt(x,y):
+def isShipAt(field, x,y):
 
 	return field[x][y] > 0 or field[x][y] == FLAG
 
@@ -57,24 +59,24 @@ def isValid(field, type, top, left, orient):
 
 		if top > 0:
 			for i in range(left,left + type):
-				if isShipAt(top - 1,i):
+				if isShipAt(field, top - 1,i):
 					return False
 
 		if top + 1 < nRow:
 			for i in range(left,left + type):
-				if isShipAt(top + 1,i):
+				if isShipAt(field, top + 1,i):
 					return False
 
 		if left > 0:
-			if isShipAt(top,left - 1) or \
-				(top > 0 and isShipAt(top - 1,left - 1)) or \
-				(top + 1 < nRow and isShipAt(top + 1, left - 1)):
+			if isShipAt(field, top,left - 1) or \
+				(top > 0 and isShipAt(field, top - 1,left - 1)) or \
+				(top + 1 < nRow and isShipAt(field, top + 1, left - 1)):
 				return False
 
 		if left + type < nCol:
-			if isShipAt(top,left + type) or \
-				(top > 0 and isShipAt(top - 1, left + type)) or \
-				(top + 1 < nRow and isShipAt(top + 1, left + type)):
+			if isShipAt(field, top,left + type) or \
+				(top > 0 and isShipAt(field, top - 1, left + type)) or \
+				(top + 1 < nRow and isShipAt(field, top + 1, left + type)):
 				return False
 
 
@@ -86,24 +88,24 @@ def isValid(field, type, top, left, orient):
 
 		if left > 0:
 			for i in range(top,top + type):
-				if isShipAt(i,left - 1):
+				if isShipAt(field, i,left - 1):
 					return False
 
 		if left + 1 < nCol:
 			for i in range(top,top + type):
-				if isShipAt(i,left + 1):
+				if isShipAt(field, i,left + 1):
 					return False
 
 		if top > 0:
-			if isShipAt(top - 1,left) or \
-				(left > 0 and isShipAt(top - 1, left - 1)) or \
-				(left + 1 < nCol and isShipAt(top - 1, left + 1)):
+			if isShipAt(field, top - 1,left) or \
+				(left > 0 and isShipAt(field, top - 1, left - 1)) or \
+				(left + 1 < nCol and isShipAt(field, top - 1, left + 1)):
 				return False
 
 		if top + type < nRow:
-			if isShipAt(top + type, left) or \
-				(left > 0 and isShipAt(top + type, left - 1)) or \
-				(left + 1 < nCol and isShipAt(top + type, left + 1)):
+			if isShipAt(field, top + type, left) or \
+				(left > 0 and isShipAt(field, top + type, left - 1)) or \
+				(left + 1 < nCol and isShipAt(field, top + type, left + 1)):
 				return False
 
 	return True
@@ -272,6 +274,9 @@ def buildFullLayout(curLayout, limitSz):
 	for r in range(nRow):
 		tmpField.append([UNKNOWN] * nCol)
 
+	for [x,y] in noShipCells:
+		tmpField[x][y] = NOSHIP
+
 	possibleType = [1,2,3,4,5]
 	for l in curLayout:
 		type = l[0]
@@ -317,12 +322,16 @@ def buildFullLayoutR(tmpField, possibleShipLoc, possibleType, sols):
 
 			if t == 1:
 				if loc[0] + t < nRow and isValid(tmpField, t, loc[0], loc[1], VER):
+
 					tmpField[loc[0]][loc[1]] = 1
+					
 					sols.append([t, loc[0], loc[1], VER])
 					tmpR = buildFullLayoutR(tmpField, possibleShipLoc[i + 1:], \
 						possibleType[:j] + possibleType[j + 1:], sols)
+					sols.pop()					
+
 					results.extend(tmpR)
-					sols.pop()
+					
 					tmpField[loc[0]][loc[1]] = UNKNOWN
 					if sizeLimit == 0:
 						return results
@@ -331,26 +340,32 @@ def buildFullLayoutR(tmpField, possibleShipLoc, possibleType, sols):
 				if random() > 0:
 
 					if loc[0] + t < nRow and isValid(tmpField, t, loc[0], loc[1], VER):
+
 						for r in range(loc[0], loc[0] + t):
 							tmpField[r][loc[1]] = 1
+						
 						sols.append([t, loc[0], loc[1], VER])
 						tmpR = buildFullLayoutR(tmpField, possibleShipLoc[i + 1:], \
 							possibleType[:j] + possibleType[j + 1:], sols)
 						results.extend(tmpR)
 						sols.pop()
+						
 						for r in range(loc[0], loc[0] + t):
 							tmpField[r][loc[1]] = UNKNOWN
 						if sizeLimit == 0:
 							return results
 
 					if loc[1] + t < nCol and isValid(tmpField, t, loc[0], loc[1], HOR):
+
 						for c in range(loc[1], loc[1] + t):
 							tmpField[loc[0]][c] = 1
+
 						sols.append([t, loc[0], loc[1], HOR])
 						tmpR = buildFullLayoutR(tmpField, possibleShipLoc[i + 1:], \
 							possibleType[:j] + possibleType[j + 1:], sols)
 						results.extend(tmpR)
 						sols.pop()
+
 						for c in range(loc[1], loc[1] + t):
 							tmpField[loc[0]][c] = UNKNOWN
 						if sizeLimit == 0:
@@ -359,22 +374,28 @@ def buildFullLayoutR(tmpField, possibleShipLoc, possibleType, sols):
 				else: # repetition code in reverse order!!!
 
 					if loc[1] + t < nCol and isValid(tmpField, t, loc[0], loc[1], HOR):
+
 						for c in range(loc[1], loc[1] + t):
 							tmpField[loc[0]][c] = 1
+
 						tmpR = buildFullLayoutR(tmpField, possibleShipLoc[i + 1:], \
 							possibleType[:j] + possibleType[j + 1:], sols)
 						results.extend(tmpR)
+
 						for c in range(loc[1], loc[1] + t):
 							tmpField[loc[0]][c] = UNKNOWN
 						if sizeLimit == 0:
 							return results
 
 					if loc[0] + t < nRow and isValid(tmpField, t, loc[0], loc[1], VER):
+
 						for r in range(loc[0], loc[0] + t):
 							tmpField[r][loc[1]] = 1
+
 						tmpR = buildFullLayoutR(tmpField, possibleShipLoc[i + 1:], \
 							possibleType[:j] + possibleType[j + 1:], sols)
 						results.extend(tmpR)
+						
 						for r in range(loc[0], loc[0] + t):
 							tmpField[r][loc[1]] = UNKNOWN
 						if sizeLimit == 0:
@@ -392,20 +413,112 @@ def visualizeField():
 		print " "
 
 
-def test(shipC, noShipC):
+def genLayoutGrid(layout):
+
+	noShip = 0
+	hasShip = 1
+
+	grid = [noShip] * nRow * nCol
+	for s in layout:
+		# type, top, left, orientation
+		t = s[0]
+		top = s[1]
+		left = s[2]
+		orient = s[3]
+
+		if orient == VER:
+			for i in range(top, top + t):
+				grid[i * nCol + left] = hasShip
+
+		else:
+			for i in range(left, left + t):
+				grid[top * nCol + i] = hasShip
+
+	return grid
+
+
+def genLayout2DGrid(layout):
+
+	noShip = 0
+	hasShip = 1
+
+	grid = []
+	for r in range(nRow):
+		grid.append([0] * nCol)
+
+	for s in layout:
+		# type, top, left, orientation
+		t = s[0]
+		top = s[1]
+		left = s[2]
+		orient = s[3]
+
+		if orient == VER:
+			for i in range(top, top + t):
+				grid[i][left] = hasShip
+
+		else:
+			for i in range(left, left + t):
+				grid[top][i] = hasShip
+
+	return grid
+
+
+def getRandomSols(grid, numSols, showGridOutput = False):
+	# 0: no ship
+	# 1: ship
+	# 2: haven't visited
+	# grid 10 x 10
+
+	shipC = []
+	for r in nRow:
+		for i in nCol:
+			if grid[r][i] == 0: # no ship
+				shipC.append([r,i])
+			elif grid[r][i] == 1: # ship
+				noShipC.append([r,i])
 
 	createField(shipC, noShipC)
 	constraintedLayouts = getPossibleConstraintedLayout()
 	# print "Constrainted results:"
+	# c = 0
 	# for r in constraintedLayouts:
+	# 	print c, "."
+	# 	c += 1
 	# 	print r
 	# print " "
 
-	results = getFullLayout(constraintedLayouts, 200)
-	print "Results:"
+	results = getFullLayout(constraintedLayouts, numSols)
+	# print "Results:"
+	# c = 0
+	# for r in results:
+	# 	print c, "."
+	# 	c += 1
+	# 	print r
+	# print " "
+
+	output = []
 	for r in results:
-		print r
-	print len(results)
+		output.append(genLayoutGrid(r))
+		numSols -= 1
+		if numSols == 0:
+			break
+
+	if showGridOutput:
+		c = 0
+		for o in output:
+			print c, "."
+			c += 1
+			for i in range(len(o)):
+				if i % nCol == 0:
+					print " "
+				print o[i],
+
+			print " "
+			print " "
+
+	return output
+
 
 
 
