@@ -471,6 +471,7 @@ def getRandomSols(grid, numSols, showGridOutput = False):
 	# grid 10 x 10
 
 	shipC = []
+	noShipC = []
 	for r in range(nRow):
 		for i in range(nCol):
 			if grid[r][i] == 0: # no ship
